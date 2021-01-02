@@ -9210,7 +9210,9 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
 					switch_channel_t *channel;
+					switch_channel_state_t state;
                                         const char *xfer_context = NULL;
+					int i = 0;
 /* nightmareXfer */
                                         xfer_context = switch_channel_get_variable(channel_a, "force_nightmare_xfer_dialplan");
 
@@ -9232,18 +9234,26 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
                                                         switch_channel_set_variable(channel, "xferor_uuid", switch_channel_get_uuid(channel_a));
                                                         switch_channel_set_variable(channel, "xferee_uuid", br_a);
                                                         status = switch_ivr_session_transfer(a_session, exten, NULL, xfer_context);
+							state = switch_channel_get_state(channel);
+							
+                                                        for(i = 0; i<10000; i++) {
+                                                                if( (state == CS_EXECUTE) || (state == CS_EXCHANGE_MEDIA) ) {
 
-                                                        if (status != SWITCH_STATUS_SUCCESS) {
-                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-                                                                           NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
-                                                                           SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
-                                                        } else {
-                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-                                                                           NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
-                                                                           SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+                                                                        if (status != SWITCH_STATUS_SUCCESS) {
+                                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                                                                                NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+                                                                                                SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
+                                                                        } else {
+                                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
+                                                                                                NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
+                                                                                                SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
+                                                                        }
+                                                                }
+                                                                state = switch_channel_get_state(channel);
                                                         }
                                                 }
+
                                                 switch_core_session_rwunlock(a_session);
                                                 goto done;
                                         }
