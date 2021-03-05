@@ -9234,26 +9234,7 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
                                                         switch_channel_set_variable(channel, "xferor_uuid", switch_channel_get_uuid(channel_a));
                                                         switch_channel_set_variable(channel, "xferee_uuid", br_a);
                                                         status = switch_ivr_session_transfer(a_session, exten, NULL, xfer_context);
-							state = switch_channel_get_state(channel);
-							sleep(2);
-                                                        state = switch_channel_get_state(channel);
-                                                        for(i = 0; i<10000; i++) {
-								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(a_session), SWITCH_LOG_DEBUG, "STATE = %d\n",state);
-                                                                if( (state == CS_EXECUTE) || (state == CS_EXCHANGE_MEDIA) ) {
-								
-                                                                        if (status != SWITCH_STATUS_SUCCESS) {
-                                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-                                                                                                NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
-                                                                                                SIPTAG_PAYLOAD_STR("SIP/2.0 403 Forbidden\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
-                                                                        } else {
-                                                                                nua_notify(tech_pvt->nh, NUTAG_NEWSUB(1), SIPTAG_CONTENT_TYPE_STR("message/sipfrag"),
-                                                                                                NUTAG_SUBSTATE(nua_substate_terminated),SIPTAG_SUBSCRIPTION_STATE_STR("terminated;reason=noresource"),
-                                                                                                SIPTAG_PAYLOAD_STR("SIP/2.0 200 OK\r\n"), SIPTAG_EVENT_STR(etmp), TAG_END());
 
-                                                                        }
-                                                                }
-                                                                state = switch_channel_get_state(channel);
-                                                        }
                                                 }
 
                                                 switch_core_session_rwunlock(a_session);
