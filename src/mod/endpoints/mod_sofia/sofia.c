@@ -9210,9 +9210,8 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
 				if (exten && (br_a = switch_channel_get_partner_uuid(channel_a))) {
 					switch_core_session_t *a_session;
 					switch_channel_t *channel;
-					switch_channel_state_t state;
                                         const char *xfer_context = NULL;
-					int i = 0;
+
 /* nightmareXfer */
                                         xfer_context = switch_channel_get_variable(channel_a, "force_nightmare_xfer_dialplan");
 
@@ -9234,6 +9233,10 @@ void sofia_handle_sip_i_refer(nua_t *nua, sofia_profile_t *profile, nua_handle_t
                                                         switch_channel_set_variable(channel, "xferor_uuid", switch_channel_get_uuid(channel_a));
                                                         switch_channel_set_variable(channel, "xferee_uuid", br_a);
                                                         status = switch_ivr_session_transfer(a_session, exten, NULL, xfer_context);
+							if(status == SWITCH_STATUS_SUCCESS ){
+								switch_log_printf(SWITCH_CHANNEL_SESSION_LOG(a_session), SWITCH_LOG_DEBUG, "Nightmare transfer dialplan executed \n");
+                    
+							}
 
                                                 }
 
