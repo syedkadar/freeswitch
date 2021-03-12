@@ -58,6 +58,6 @@ Slack Community:
 
 Mailing list:
 
-  * http://lists.freeswitch.org/mailman/listinfo/freeswitch-users
+  * http://lists.freeswitch.org/mailman/listinfo/freeswitch-user
 
 **Thank you for using FreeSWITCH!**
