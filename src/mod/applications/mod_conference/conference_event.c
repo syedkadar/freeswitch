@@ -108,7 +108,7 @@ void conference_event_mod_channel_handler(const char *event_channel, cJSON *json
 		}
 	}
 
-	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action, cid);
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "conf %s CMD %s [%s] %s\n", conference_name, key, action ? action : "N/A", cid);
 
 	if (zstr(action)) {
 		goto end;
@@ -978,6 +978,31 @@ void conference_event_pres_handler(switch_event_t *event)
 	switch_safe_free(dup_conference_name);
 }
 
+/************************Added for subscribe - Notify******************************************************/
+
+void conference_event_subscribe_feature_handler(switch_event_t *event)
+{
+	conference_obj_t *conference = NULL;
+	char *name = NULL;
+	char *content = NULL;
+
+	name = switch_event_get_header(event, "conference-name");
+	conference = conference_find(name, NULL);
+
+	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "inside conference_event_subscribe_feature_handler- NOTIFY to %s\n", conference->uuid_str);
+
+	switch_event_add_body(event, "%s", content);
+
+	switch_event_create(&event, SWITCH_EVENT_NOTIFY);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", conference->uuid_str);
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-string", "conference");
+	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "application/conference-info");
+
+	switch_event_fire(&event);
+
+	//conference_send_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
+}
+/******************************************************************************/
 
 switch_status_t chat_send(switch_event_t *message_event)
 {

@@ -995,6 +995,7 @@ void conference_utils_set_mflags(const char *flags, member_flag_t *f);
 void conference_utils_merge_mflags(member_flag_t *a, member_flag_t *b);
 void conference_utils_clear_eflags(char *events, uint32_t *f);
 void conference_event_pres_handler(switch_event_t *event);
+void conference_event_subscribe_feature_handler(switch_event_t *event);
 void conference_data_event_handler(switch_event_t *event);
 void conference_event_call_setup_handler(switch_event_t *event);
 void conference_member_add_file_data(conference_member_t *member, int16_t *data, switch_size_t file_data_len);

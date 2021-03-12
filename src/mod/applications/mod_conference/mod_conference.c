@@ -165,6 +165,9 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 {
 	switch_event_t *event;
 	char *name = NULL, *domain = NULL, *dup_domain = NULL;
+	char *conf_status = NULL;
+
+	conf_status = strdup(status);
 
 	if (!conference_utils_test_flag(conference, CFLAG_RFC4579)) {
 		return;
@@ -187,7 +190,15 @@ void conference_send_notify(conference_obj_t *conference, const char *status, co
 
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-name", name);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-domain", domain);
-		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+
+		if(strcasecmp(conf_status, "NOTIFY SIP/2.0"))
+		{
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "notify");
+		}
+		else{
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "conference-event", "refer");
+		}
+
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call_id", call_id);
 
 		if (final) {
@@ -1602,6 +1613,7 @@ switch_status_t conference_outcall(conference_obj_t *conference,
 
 	if (track) {
 		conference_send_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
+		conference_send_notify(conference, "NOTIFY  SIP/2.0 \r\n", call_id, SWITCH_TRUE);
 	}
 
 	rdlock = 1;
@@ -3973,6 +3985,10 @@ SWITCH_MODULE_LOAD_FUNCTION(mod_conference_load)
 
 	if (switch_event_bind(modname, SWITCH_EVENT_CALL_SETUP_REQ, SWITCH_EVENT_SUBCLASS_ANY, conference_event_call_setup_handler, NULL) != SWITCH_STATUS_SUCCESS) {
 		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to conference data query events!\n");
+	}
+
+	if (switch_event_bind(modname, SWITCH_EVENT_PHONE_FEATURE_SUBSCRIBE, SWITCH_EVENT_SUBCLASS_ANY, conference_event_subscribe_feature_handler, NULL) != SWITCH_STATUS_SUCCESS) {
+		switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_ERROR, "Couldn't subscribe to phone feature subscribe events!\n");
 	}
 
 	SWITCH_ADD_API(api_interface, "conference", "Conference module commands", conference_api_main, p);
