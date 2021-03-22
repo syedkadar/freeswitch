@@ -982,6 +982,70 @@ void conference_event_pres_handler(switch_event_t *event)
 
 void conference_event_subscribe_feature_handler(switch_event_t *event)
 {
+
+	char *to = switch_event_get_header(event, "to");
+	char *domain_name = NULL;
+	char *body;
+	char *dup_to = NULL, *conference_name, *dup_conference_name = NULL;
+	conference_obj_t *conference;
+
+	if (!to || strncasecmp(to, "conf+", 5) || !strchr(to, '@')) {
+		return;
+	}
+
+	if (!(dup_to = strdup(to))) {
+		return;
+	}
+
+
+	conference_name = dup_to + 5;
+
+	if ((domain_name = strchr(conference_name, '@'))) {
+		*domain_name++ = '\0';
+	}
+
+	dup_conference_name = switch_mprintf("%q@%q", conference_name, domain_name);
+	body = conference_cdr_rfc4579_render(conference, NULL, event);
+
+	if ((conference = conference_find(conference_name, NULL)) || (conference = conference_find(dup_conference_name, NULL)))
+	{
+		if (switch_event_create(&event, SWITCH_EVENT_NOTIFY) == SWITCH_STATUS_SUCCESS) {
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference->name);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "from", "%s@%s", conference->name, conference->domain);
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "force-status", "Active (%d caller%s)", conference->count, conference->count == 1 ? "" : "s");
+			switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_ROUTING");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", conference->count == 1 ? "early" : "confirmed");
+			switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", conference->count == 1 ? "outbound" : "inbound");
+			//switch_event_set_body(event, switch_event_get_body(event));
+			switch_event_add_body(event, "%s", body);
+			free(body);
+			switch_event_fire(&event);
+		}
+		switch_thread_rwlock_unlock(conference->rwlock);
+	} else if (switch_event_create(&event, SWITCH_EVENT_NOTIFY) == SWITCH_STATUS_SUCCESS) {
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "proto", CONF_CHAT_PROTO);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "login", conference_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "from", to);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "force-status", "Idle");
+		switch_event_add_header(event, SWITCH_STACK_BOTTOM, "event_count", "%d", EC++);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "unique-id", conference_name);
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "channel-state", "CS_HANGUP");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "answer-state", "terminated");
+		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "call-direction", "inbound");
+		//switch_event_set_body(event, switch_event_get_body(event));
+		switch_event_add_body(event, "%s", body);
+		free(body);
+		switch_event_fire(&event);
+	}
+
+	switch_safe_free(dup_to);
+	switch_safe_free(dup_conference_name);
+
+
+#if 0
 	conference_obj_t *conference = NULL;
 	char *name = NULL;
 	char *content = NULL;
@@ -991,14 +1055,14 @@ void conference_event_subscribe_feature_handler(switch_event_t *event)
 
 	switch_log_printf(SWITCH_CHANNEL_LOG, SWITCH_LOG_DEBUG, "inside conference_event_subscribe_feature_handler- NOTIFY to %s\n", conference->uuid_str);
 
-	switch_event_add_body(event, "%s", content);
-
 	switch_event_create(&event, SWITCH_EVENT_NOTIFY);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "uuid", conference->uuid_str);
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "event-string", "conference");
 	switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "content-type", "application/conference-info");
+	switch_event_add_body(event, "%s", content);
 
 	switch_event_fire(&event);
+#endif
 
 	//conference_send_notify(conference, "SIP/2.0 200 OK\r\n", call_id, SWITCH_TRUE);
 }

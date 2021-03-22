@@ -4308,7 +4308,8 @@ void sofia_presence_handle_sip_i_subscribe(int status,
 		}
 	} else 	if (!strcasecmp(event, "conference")) {
 		switch_event_t *event;
-		switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA_QUERY);
+		//switch_event_create(&event, SWITCH_EVENT_CONFERENCE_DATA_QUERY);
+		switch_event_create(&event, SWITCH_EVENT_PHONE_FEATURE_SUBSCRIBE);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Name", to_user);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Conference-Domain", to_host);
 		switch_event_add_header_string(event, SWITCH_STACK_BOTTOM, "Query-From", from_user);
